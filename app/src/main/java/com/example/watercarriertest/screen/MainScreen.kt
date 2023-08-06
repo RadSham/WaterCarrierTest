@@ -1,13 +1,15 @@
-package com.example.watercarriertest
+package com.example.watercarriertest.screen
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -16,11 +18,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
+import com.example.watercarriertest.MainActivity.Companion.MAIN_URL
+import com.example.watercarriertest.R
+import com.example.watercarriertest.retrofit.Data
 import com.example.watercarriertest.retrofit.Goods
+import com.example.watercarriertest.retrofit.TOVARY
 import com.google.accompanist.pager.ExperimentalPagerApi
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.pagerTabIndicatorOffset
@@ -36,7 +44,7 @@ fun MainCard() {
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color.DarkGray,
+            backgroundColor = Color.LightGray,
             elevation = 0.dp,
             shape = RoundedCornerShape(10.dp)
         ) {
@@ -58,7 +66,10 @@ fun MainCard() {
 @OptIn(ExperimentalPagerApi::class)
 @Composable
 fun TabLayout(goods: Goods?) {
-    val tabList = listOf("Выбор покупателей", "Выбор Семья")
+    val tabList = mutableListOf<TOVARY>()
+    if (goods != null) for (t in goods.TOVARY) {
+        tabList.add(t)
+    }
     val pagerState = rememberPagerState()
     val tabIndex = pagerState.currentPage
     val coroutineScope = rememberCoroutineScope()
@@ -75,6 +86,7 @@ fun TabLayout(goods: Goods?) {
             .clip(RoundedCornerShape(5.dp))
     ) {
         ScrollableTabRow(
+            edgePadding = 0.dp,
             selectedTabIndex = tabIndex,
             indicator = { pos ->
                 TabRowDefaults.Indicator(
@@ -85,7 +97,7 @@ fun TabLayout(goods: Goods?) {
             backgroundColor = Color.Gray,
             contentColor = Color.White
         ) {
-            tabList.forEachIndexed { index, text ->
+            tabList.forEachIndexed { index, tovary ->
                 Tab(
                     selected = false,
                     onClick = {
@@ -94,7 +106,7 @@ fun TabLayout(goods: Goods?) {
                         }
                     },
                     text = {
-                        Text(text = text)
+                        tovary.NAME?.let { Text(text = it) }
                     }
                 )
             }
@@ -103,7 +115,7 @@ fun TabLayout(goods: Goods?) {
             count = tabList.size,
             state = pagerState,
             modifier = Modifier
-                .weight(1.0f)
+                .weight(0.7f)
                 .nestedScroll(remember {
                     object : NestedScrollConnection {
                         override fun onPreScroll(
@@ -118,47 +130,96 @@ fun TabLayout(goods: Goods?) {
                     }
                 })
         ) { page: Int ->
-            when (page) {
-                0 -> goods?.let { ListLazyRow(it) }
-                1 -> goods?.let { ListLazyRow(it) }
-            }
+            ListLazyRow(tabList[page].data)
         }
     }
 }
 
-
+//Slider
 @Composable
-fun ListLazyRow(items: Goods) {
+fun ListLazyRow(items: ArrayList<Data>) {
     LazyRow(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        items(items.TOVARY[0].data.size) { index ->
-            Button(
-                onClick = { /*TODO*/ },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "${items.TOVARY[0].data[index].ID}")
+        items(items.size) { index ->
+            GoodCard(items[index])
+        }
+    }
+}
+
+//
+@Composable
+fun GoodCard(
+    data: Data,
+    modifier: Modifier = Modifier,
+) {
+    val picUrl = data.DETAILPICTURE?.replace("\\", "")
+    val imageUrl = "$MAIN_URL$picUrl"
+    Column(
+        modifier = Modifier
+            .padding(5.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier.background(Color.LightGray),
+            contentAlignment = Alignment.TopEnd
+        ) {
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = data.ID.toString(),
+                modifier = Modifier
+                    .padding(top = 3.dp, end = 8.dp)
+            )
+            FavoriteButton(modifier = Modifier.padding(12.dp))
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                modifier = Modifier.padding(end = 20.dp),
+                text = "${data.EXTENDEDPRICE[0].PRICE.toString()} ₽",
+                style = TextStyle(fontSize = 20.sp),
+                color = Color.Black,
+            )
+            IconButton(onClick = {
+                /*TODO*/
+            }) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_shopping_cart),
+                    contentDescription = "im4",
+                    tint = Color.Black
+                )
             }
         }
     }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ListFlowRow(items: Int) {
-    LazyRow(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        items(items) { index ->
-            Button(
-                onClick = { /*TODO*/ },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(text = "Button $index")
-            }
-        }
+fun FavoriteButton(
+    modifier: Modifier = Modifier,
+    color: Color = Color.Red
+) {
 
+    var isFavorite by remember { mutableStateOf(false) }
+
+    IconToggleButton(
+        checked = isFavorite,
+        onCheckedChange = {
+            isFavorite = !isFavorite
+        }
+    ) {
+        Icon(
+            tint = color,
+            imageVector = if (isFavorite) {
+                Icons.Filled.Favorite
+            } else {
+                Icons.Default.FavoriteBorder
+            },
+            contentDescription = null
+        )
     }
 }
 
@@ -167,20 +228,19 @@ fun ListFlowRow(items: Int) {
 fun MainCard2() {
     Column(
         modifier = Modifier
-            .padding(5.dp),
+            .padding(5.dp)
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            backgroundColor = Color.DarkGray,
+            backgroundColor = Color.LightGray,
             elevation = 50.dp,
             shape = RoundedCornerShape(10.dp)
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 Text(
-                    text = "SECOND_GOODS",
+                    text = "GOODS_2",
                     style = TextStyle(fontSize = 40.sp),
                     color = Color.White
                 )

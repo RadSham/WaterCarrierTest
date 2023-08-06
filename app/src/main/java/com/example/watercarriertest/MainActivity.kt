@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Column
 import com.example.watercarriertest.retrofit.Goods
 import com.example.watercarriertest.retrofit.InitRetrofit
 import com.example.watercarriertest.retrofit.MainApi
+import com.example.watercarriertest.screen.MainCard
+import com.example.watercarriertest.screen.MainCard2
+import com.example.watercarriertest.screen.TabLayout
 import com.example.watercarriertest.ui.theme.WaterCarrierTestTheme
 import com.example.watercarriertest.viewmodel.GoodsViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -27,29 +30,9 @@ class MainActivity : ComponentActivity() {
         init()
     }
 
-    private fun setContent(){
-        setContent {
-            WaterCarrierTestTheme {
-                Column {
-                    MainCard()
-                    TabLayout(goods)
-                    MainCard2()
-                }
-            }
-        }
-    }
-
-
     private fun init() {
         initRetrofit()
         initViewModel()
-    }
-
-    private fun initViewModel() {
-        viewModel.mutableGoods.observe(this) { good ->
-            goods = good
-            setContent()
-        }
     }
 
     private fun initRetrofit() {
@@ -68,6 +51,24 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun initViewModel() {
+        viewModel.mutableGoods.observe(this) { good ->
+            goods = good
+            setContent()
+        }
+    }
+
+    private fun setContent() {
+        setContent {
+            WaterCarrierTestTheme {
+                Column {
+                    MainCard()
+                    if (goods?.status == "Success") TabLayout(goods)
+                    MainCard2()
+                }
+            }
+        }
+    }
 
     companion object {
         const val MAIN_URL = "http://szorinvodovoz.tw1.ru"
